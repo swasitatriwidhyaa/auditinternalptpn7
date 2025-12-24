@@ -19,9 +19,25 @@
             <form action="{{ route('riwayat.show', $unit->id) }}" method="GET" class="mb-4 p-3 bg-light rounded border">
                 <div class="row g-2 align-items-end">
                     
-                    {{-- Dropdown Bulan --}}
+                    {{-- 1. Filter Standar (SUDAH DIPERBAIKI NAMANYA) --}}
                     <div class="col-md-3">
-                        <label for="month" class="form-label fw-bold small text-muted">Filter Bulan</label>
+                        <label for="standard" class="form-label fw-bold small text-muted">Jenis Audit</label>
+                        <select name="standard" class="form-select">
+                            <option value="">-- Semua Jenis --</option>
+                            
+                            @foreach($standardsList as $std)
+                                <option value="{{ $std->id }}" {{ request('standard') == $std->id ? 'selected' : '' }}>
+                                    {{-- Mengambil nama dari Manual Mapping berdasarkan ID --}}
+                                    {{ $standardNames[$std->id] ?? 'Standar #' . $std->id }}
+                                </option>
+                            @endforeach
+                            
+                        </select>
+                    </div>
+
+                    {{-- 2. Filter Bulan --}}
+                    <div class="col-md-3">
+                        <label for="month" class="form-label fw-bold small text-muted">Bulan</label>
                         <select name="month" class="form-select">
                             <option value="">-- Semua Bulan --</option>
                             @foreach(range(1, 12) as $m)
@@ -32,12 +48,11 @@
                         </select>
                     </div>
 
-                    {{-- Dropdown Tahun --}}
+                    {{-- 3. Filter Tahun --}}
                     <div class="col-md-3">
-                        <label for="year" class="form-label fw-bold small text-muted">Filter Tahun</label>
+                        <label for="year" class="form-label fw-bold small text-muted">Tahun</label>
                         <select name="year" class="form-select">
                             <option value="">-- Semua Tahun --</option>
-                            {{-- Menampilkan range tahun dari 2 tahun lalu sampai 2 tahun ke depan --}}
                             @for($y = date('Y') - 2; $y <= date('Y') + 2; $y++)
                                 <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
                                     {{ $y }}
@@ -46,18 +61,23 @@
                         </select>
                     </div>
 
-                    {{-- Tombol Filter & Reset --}}
-                    <div class="col-md-4">
-                        <button type="submit" class="btn btn-success text-white">
-                            <i class="bi bi-funnel-fill me-1"></i> Terapkan
-                        </button>
-                        
-                        @if(request('month') || request('year'))
-                            <a href="{{ route('riwayat.show', $unit->id) }}" class="btn btn-outline-danger ms-1">
-                                <i class="bi bi-x-circle"></i> Reset
-                            </a>
-                        @endif
+                    {{-- 4. Tombol Filter --}}
+                    <div class="col-md-3">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success text-white">
+                                <i class="bi bi-funnel-fill me-1"></i> Terapkan
+                            </button>
+                        </div>
                     </div>
+
+                    {{-- Tombol Reset --}}
+                    @if(request('month') || request('year') || request('standard'))
+                    <div class="col-12 mt-2 text-end">
+                         <a href="{{ route('riwayat.show', $unit->id) }}" class="text-danger text-decoration-none small">
+                            <i class="bi bi-x-circle"></i> Reset semua filter
+                        </a>
+                    </div>
+                    @endif
                 </div>
             </form>
             {{-- === FORM FILTER END === --}}
@@ -68,6 +88,7 @@
                         <tr>
                             <th>No</th>
                             <th>Tanggal Audit</th>
+                            <th>Standar</th>
                             <th>Status</th>
                             <th>Lead Auditor</th>
                             <th>Aksi</th>
@@ -78,7 +99,6 @@
                         <tr>
                             <td>{{ $index + 1 }}</td>
                             <td>
-                                {{-- Format Tanggal --}}
                                 @if(!empty($audit->tanggal_audit))
                                     {{ \Carbon\Carbon::parse($audit->tanggal_audit)->locale('id')->isoFormat('D MMMM Y') }}
                                 @else
@@ -86,7 +106,12 @@
                                 @endif
                             </td>
                             <td>
-                                {{-- LOGIKA STATUS --}}
+                                {{-- Menampilkan Nama Standar di Tabel --}}
+                                <span class="fw-bold text-dark">
+                                    {{ $standardNames[$audit->standard_id] ?? 'Standar #' . $audit->standard_id }}
+                                </span>
+                            </td>
+                            <td>
                                 @if(in_array(strtolower($audit->status), ['finished', 'selesai (closed)', 'closed']))
                                     <span class="badge bg-success">Selesai (Closed)</span>
                                 @elseif(in_array(strtolower($audit->status), ['ongoing', 'proses', 'process']))
@@ -96,7 +121,6 @@
                                 @endif
                             </td>
                             <td>
-                                {{-- Nama Auditor --}}
                                 {{ $audit->auditor->name ?? $audit->user->name ?? 'Admin' }}
                             </td>
                             <td>
@@ -107,7 +131,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
+                            <td colspan="6" class="text-center py-5 text-muted">
                                 <div class="mb-2"><i class="bi bi-search" style="font-size: 2rem;"></i></div>
                                 <em>Tidak ada data audit yang ditemukan untuk filter ini.</em>
                             </td>

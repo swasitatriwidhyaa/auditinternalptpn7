@@ -12,8 +12,11 @@ class Audit extends Model
     protected $guarded = ['id'];
 
     // Relasi ke Standar (Satu audit punya satu standar, misal Audit ini khusus ISO 9001)
+// Tambahkan di dalam class Audit extends Model { ... }
+
     public function standard()
     {
+        // Relasi ke model AuditStandard
         return $this->belongsTo(AuditStandard::class, 'standard_id');
     }
 
@@ -35,4 +38,6 @@ class Audit extends Model
     {
         return $this->hasMany(AuditFinding::class);
     }
+
+    
 }
